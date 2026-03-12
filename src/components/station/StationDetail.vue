@@ -24,6 +24,8 @@ let dragging = false
 
 function onTouchStart(e: TouchEvent) {
     const touch = e.touches[0]
+    if (!touch) return
+
     startY = touch.clientY
     startX = touch.clientX
     dragging = false
@@ -32,6 +34,8 @@ function onTouchStart(e: TouchEvent) {
 
 function onTouchMove(e: TouchEvent) {
     const touch = e.touches[0]
+    if (!touch) return
+
     const dy = touch.clientY - startY
     const dx = Math.abs(touch.clientX - startX)
 
