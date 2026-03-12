@@ -32,8 +32,10 @@ function applyUpdate() {
     <Transition name="pwa-banner">
       <div v-if="needRefresh && !dismissedUpdate" class="pwa-update-banner">
         <span class="pwa-update-text">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
-            <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+            stroke-linecap="round">
+            <polyline points="23 4 23 10 17 10" />
+            <polyline points="1 20 1 14 7 14" />
             <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
           </svg>
           New version available

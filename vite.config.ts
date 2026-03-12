@@ -42,7 +42,8 @@ export default defineConfig({
       manifest: {
         name: 'ChargeNow — EV Charging Finder',
         short_name: 'ChargeNow',
-        description: 'Find EV charging stations near you. View the map, check availability and get directions.',
+        description:
+          'Find EV charging stations near you. View the map, check availability and get directions.',
         theme_color: '#00c896',
         background_color: '#0d0d1a',
         display: 'standalone',
@@ -69,7 +70,7 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url))
+      '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
 })
