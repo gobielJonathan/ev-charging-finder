@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import axios from 'axios'
 import { fetchStationsByBounds } from '@/services/api'
 import type { ChargingStation, MapBounds } from '@/types/station'
 
@@ -14,24 +15,44 @@ export const useStationStore = defineStore('station', () => {
   const isDetailOpen = ref(false)
   const lastFetchedBounds = ref<MapBounds | null>(null)
 
+  // Tracks the current in-flight request so we can abort it when a newer one arrives
+  let activeAbortController: AbortController | null = null
+
   const operationalStations = computed(() =>
     stations.value.filter((s) => s.StatusType?.IsOperational !== false),
   )
 
   async function loadStations(bounds: MapBounds) {
+    // Cancel any previous in-flight request so only the latest one completes
+    if (activeAbortController) {
+      activeAbortController.abort()
+    }
+    const controller = new AbortController()
+    activeAbortController = controller
+
     isLoading.value = true
     error.value = null
     try {
-      const incoming = await fetchStationsByBounds({ bounds })
-      stations.value = incoming
-      // Record the bounds that were actually fetched so callers can
-      // avoid redundant requests when the viewport hasn't moved outside this area.
-      lastFetchedBounds.value = bounds
+      const incoming = await fetchStationsByBounds({ bounds }, controller.signal)
+      // Only apply the result if this controller is still the active one
+      // (i.e. no newer request has replaced it)
+      if (activeAbortController === controller) {
+        stations.value = incoming
+        lastFetchedBounds.value = bounds
+      }
     } catch (e) {
+      // Ignore aborted requests – they are expected when a newer call supersedes
+      if (axios.isCancel(e) || (e instanceof DOMException && e.name === 'AbortError')) {
+        return
+      }
       error.value = 'Failed to load charging stations. Please try again.'
       console.error(e)
     } finally {
-      isLoading.value = false
+      // Only clear loading state if this is still the active request
+      if (activeAbortController === controller) {
+        isLoading.value = false
+        activeAbortController = null
+      }
     }
   }
 

@@ -5,6 +5,7 @@ import { computed } from 'vue'
 const props = defineProps<{
     station: ChargingStation
     compact?: boolean
+    selected?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -50,8 +51,8 @@ const directionsUrl = computed(() => {
 
 <template>
     <!-- Using div+role instead of <button> so we can nest an <a> for directions -->
-    <div class="station-card" :class="{ 'station-card--compact': compact }" role="button" tabindex="0"
-        @click="emit('click', station)" @keydown.enter.prevent="emit('click', station)"
+    <div class="station-card" :class="{ 'station-card--compact': compact, 'station-card--selected': selected }"
+        role="button" tabindex="0" @click="emit('click', station)" @keydown.enter.prevent="emit('click', station)"
         @keydown.space.prevent="emit('click', station)">
         <!-- Status indicator strip -->
         <div class="status-strip" :class="isOperational ? 'status-strip--ok' : 'status-strip--off'" />
@@ -159,7 +160,14 @@ const directionsUrl = computed(() => {
 }
 
 .station-card:active {
-    transform: scale(0.99);
+    transform: scale(0.97);
+    transition-duration: 0.08s;
+}
+
+.station-card--selected {
+    border-color: var(--primary);
+    background: rgba(0, 200, 150, 0.06);
+    box-shadow: 0 0 0 1px var(--primary), var(--shadow-glow);
 }
 
 .status-strip {

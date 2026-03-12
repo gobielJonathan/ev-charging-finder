@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick, watch } from 'vue'
 import StationCard from './StationCard.vue'
 import { useStationStore } from '@/stores/stationStore'
 import type { ChargingStation } from '@/types/station'
 
 const store = useStationStore()
+const selectedId = computed(() => store.selectedStation?.ID ?? null)
 const filter = ref<'all' | 'online' | 'fast'>('all')
 
 const filtered = computed(() => {
@@ -15,9 +16,19 @@ const filtered = computed(() => {
 
 const skeletons = Array.from({ length: 4 })
 
+const listBodyRef = ref<HTMLElement | null>(null)
+
 const emit = defineEmits<{
     (e: 'stationClick', station: ChargingStation): void
 }>()
+
+watch(selectedId, (id) => {
+    if (id == null) return
+    nextTick(() => {
+        const el = listBodyRef.value?.querySelector(`[data-station-id="${id}"]`) as HTMLElement | null
+        el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    })
+})
 </script>
 
 <template>
@@ -60,10 +71,11 @@ const emit = defineEmits<{
         </div>
 
         <!-- Station items -->
-        <div v-else class="list-body">
-            <div v-for="(station, i) in filtered" :key="station.ID" class="card-wrap"
+        <div v-else ref="listBodyRef" class="list-body">
+            <div v-for="(station, i) in filtered" :key="station.ID" class="card-wrap" :data-station-id="station.ID"
                 :style="{ animationDelay: `${i * 35}ms` }">
-                <StationCard :station="station" @click="emit('stationClick', station)" />
+                <StationCard :station="station" :selected="selectedId === station.ID"
+                    @click="emit('stationClick', station)" />
             </div>
         </div>
     </div>

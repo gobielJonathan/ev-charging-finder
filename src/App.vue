@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 // import { useRegisterSW } from 'virtual:pwa-register/vue'
 import { useRoute } from 'vue-router'
-import BottomNav from '@/components/layout/BottomNav.vue'
+// import BottomNav from '@/components/layout/BottomNav.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 
 const route = useRoute()
@@ -26,7 +26,7 @@ function applyUpdate() {
         </Transition>
       </RouterView>
     </main>
-    <BottomNav />
+    <!-- <BottomNav /> -->
 
     <!-- PWA update banner -->
     <!-- <Transition name="pwa-banner">
@@ -60,7 +60,7 @@ function applyUpdate() {
 .app-main {
   flex: 1;
   padding-top: var(--header-height);
-  padding-bottom: var(--nav-height);
+  padding-bottom: 0;
   display: flex;
   flex-direction: column;
 }

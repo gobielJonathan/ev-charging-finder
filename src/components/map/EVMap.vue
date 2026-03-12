@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import L from 'leaflet'
 import type { ChargingStation } from '@/types/station'
 import { useStationStore } from '@/stores/stationStore'
@@ -15,6 +15,7 @@ const mapEl = ref<HTMLElement | null>(null)
 let map: L.Map | null = null
 let markersLayer: L.LayerGroup | null = null
 let userMarker: L.Marker | null = null
+let resizeObserver: ResizeObserver | null = null
 
 // Create custom EV station pin — uses inline styles to guarantee rendering
 function createStationIcon(station: ChargingStation, isSelected = false): L.DivIcon {
@@ -207,9 +208,23 @@ watch(
 
 onMounted(() => {
     initMap()
+    // Force Leaflet to recalculate tile coverage after the initial paint
+    nextTick(() => {
+        setTimeout(() => map?.invalidateSize(), 100)
+    })
+    // Re-invalidate whenever the container is resized (e.g. detail panel opens,
+    // drawer expands, orientation change on mobile)
+    if (mapEl.value) {
+        resizeObserver = new ResizeObserver(() => {
+            map?.invalidateSize()
+        })
+        resizeObserver.observe(mapEl.value)
+    }
 })
 
 onUnmounted(() => {
+    resizeObserver?.disconnect()
+    resizeObserver = null
     map?.remove()
     map = null
 })

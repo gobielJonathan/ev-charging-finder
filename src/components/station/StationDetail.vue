@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { ChargingStation } from '@/types/station'
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps<{
@@ -13,6 +13,49 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+
+// ─── Swipe-to-close gesture ──────────────────────────────────────────────────
+const panelRef = ref<HTMLElement | null>(null)
+const dragOffset = ref(0)
+const isDragging = ref(false)
+let startY = 0
+let startX = 0
+let dragging = false
+
+function onTouchStart(e: TouchEvent) {
+    const touch = e.touches[0]
+    startY = touch.clientY
+    startX = touch.clientX
+    dragging = false
+    dragOffset.value = 0
+}
+
+function onTouchMove(e: TouchEvent) {
+    const touch = e.touches[0]
+    const dy = touch.clientY - startY
+    const dx = Math.abs(touch.clientX - startX)
+
+    // Only start dragging if vertical movement > horizontal
+    if (!dragging && dy > 8 && dy > dx) {
+        dragging = true
+        isDragging.value = true
+    }
+
+    if (dragging && dy > 0) {
+        dragOffset.value = dy
+        e.preventDefault()
+    }
+}
+
+function onTouchEnd() {
+    if (dragging && dragOffset.value > 100) {
+        // Swipe threshold reached — close
+        emit('close')
+    }
+    dragOffset.value = 0
+    dragging = false
+    isDragging.value = false
+}
 
 const isOperational = computed(() => props.station.StatusType?.IsOperational !== false)
 
@@ -56,8 +99,15 @@ function openDirections() {
 </script>
 
 <template>
+    <!-- Backdrop -->
+    <Transition name="backdrop">
+        <div v-if="show" class="detail-backdrop" @click="emit('close')" />
+    </Transition>
+
     <Transition name="slide-panel">
-        <div v-if="show" class="station-detail">
+        <div v-if="show" ref="panelRef" class="station-detail" :class="{ 'station-detail--dragging': isDragging }"
+            :style="dragOffset > 0 ? { transform: `translateY(${dragOffset}px)`, transition: 'none' } : undefined"
+            @touchstart.passive="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
             <!-- Handle / close bar -->
             <div class="detail-handle">
                 <div class="handle-bar" />
@@ -72,7 +122,7 @@ function openDirections() {
 
             <div class="detail-scroll">
                 <!-- Header -->
-                <div class="detail-header">
+                <div class="detail-header detail-anim" style="--anim-order: 0">
                     <div class="station-icon-wrap" :class="isOperational ? 'icon-wrap--ok' : 'icon-wrap--off'">
                         <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
@@ -91,7 +141,7 @@ function openDirections() {
                 </div>
 
                 <!-- Address & Operator -->
-                <div class="detail-section">
+                <div class="detail-section detail-anim" style="--anim-order: 1">
                     <div class="info-row">
                         <div class="info-icon">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -152,7 +202,7 @@ function openDirections() {
                 </div>
 
                 <!-- Connectors -->
-                <div v-if="uniqueConnectors.length" class="detail-section">
+                <div v-if="uniqueConnectors.length" class="detail-section detail-anim" style="--anim-order: 2">
                     <h4 class="section-title">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.5">
@@ -171,7 +221,7 @@ function openDirections() {
                 </div>
 
                 <!-- General comments -->
-                <div v-if="station.GeneralComments" class="detail-section">
+                <div v-if="station.GeneralComments" class="detail-section detail-anim" style="--anim-order: 3">
                     <h4 class="section-title">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2">
@@ -183,7 +233,7 @@ function openDirections() {
                 </div>
 
                 <!-- Actions -->
-                <div class="detail-actions">
+                <div class="detail-actions detail-anim" style="--anim-order: 4">
                     <button class="action-btn action-btn--secondary" @click="openDirections">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                             stroke-width="2.5">
@@ -205,6 +255,27 @@ function openDirections() {
 </template>
 
 <style scoped>
+/* ─── Backdrop ─── */
+.detail-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 49;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+.backdrop-enter-active,
+.backdrop-leave-active {
+    transition: opacity 0.3s ease;
+}
+
+.backdrop-enter-from,
+.backdrop-leave-to {
+    opacity: 0;
+}
+
+/* ─── Panel ─── */
 .station-detail {
     position: absolute;
     bottom: 0;
@@ -218,6 +289,12 @@ function openDirections() {
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-lg);
+    will-change: transform;
+}
+
+.station-detail--dragging {
+    /* Disable scroll while dragging */
+    overflow: hidden;
 }
 
 /* Desktop: side panel */
@@ -515,21 +592,48 @@ function openDirections() {
     border-color: var(--border-active);
 }
 
-/* Transition */
-.slide-panel-enter-active,
-.slide-panel-leave-active {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+/* ─── Staggered content animation ─── */
+.detail-anim {
+    animation: detailFadeUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(0.08s + var(--anim-order, 0) * 0.06s);
 }
 
-.slide-panel-enter-from,
+@keyframes detailFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ─── Panel slide transition ─── */
+.slide-panel-enter-active {
+    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+}
+
+.slide-panel-leave-active {
+    transition: transform 0.25s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease;
+}
+
+.slide-panel-enter-from {
+    transform: translateY(100%);
+    opacity: 0;
+}
+
 .slide-panel-leave-to {
     transform: translateY(100%);
     opacity: 0;
 }
 
 @media (min-width: 768px) {
+    .slide-panel-enter-from {
+        transform: translateX(-100%);
+    }
 
-    .slide-panel-enter-from,
     .slide-panel-leave-to {
         transform: translateX(-100%);
     }

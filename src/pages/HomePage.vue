@@ -257,13 +257,15 @@ onMounted(() => {
                 </div>
             </div>
 
-            <!-- Station detail panel (overlays bottom of map) -->
-            <StationDetail v-if="store.selectedStation" :station="store.selectedStation" :show="store.isDetailOpen"
-                @close="store.closeDetail()" />
         </div>
 
-        <!-- Bottom drawer: station list -->
-        <div class="list-drawer" :class="{ 'list-drawer--expanded': isListExpanded }">
+        <!-- Station detail panel (overlays full page) -->
+        <StationDetail v-if="store.selectedStation" :station="store.selectedStation" :show="store.isDetailOpen"
+            @close="store.closeDetail()" />
+
+        <!-- Bottom drawer: station list (hidden when detail panel is open) -->
+        <div class="list-drawer"
+            :class="{ 'list-drawer--expanded': isListExpanded, 'list-drawer--hidden': store.isDetailOpen }">
             <!-- Drag handle / header -->
             <button class="drawer-header" @click="isListExpanded = !isListExpanded">
                 <div class="drawer-handle" />
@@ -308,7 +310,7 @@ onMounted(() => {
     flex: 1;
     display: flex;
     flex-direction: column;
-    height: calc(100dvh - var(--header-height) - var(--nav-height));
+    height: calc(100dvh - var(--header-height));
     overflow: hidden;
 }
 
@@ -476,6 +478,12 @@ onMounted(() => {
     max-height: 60%;
 }
 
+.list-drawer--hidden {
+    max-height: 0;
+    border-top-color: transparent;
+    pointer-events: none;
+}
+
 .drawer-header {
     background: none;
     border: none;
@@ -576,8 +584,6 @@ onMounted(() => {
 
     .map-container {
         flex: 1;
-        margin-left: 72px;
-        /* side nav width */
     }
 
     .list-drawer {
@@ -587,7 +593,7 @@ onMounted(() => {
     .desktop-sidebar {
         display: flex;
         position: fixed;
-        left: 72px;
+        left: 0;
         top: var(--header-height);
         bottom: 0;
         width: var(--sidebar-width);
@@ -620,7 +626,7 @@ onMounted(() => {
 
     /* Adjust map to accommodate sidebar */
     .map-container {
-        margin-left: calc(72px + var(--sidebar-width));
+        margin-left: var(--sidebar-width);
     }
 }
 </style>

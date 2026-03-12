@@ -17,6 +17,7 @@ export interface FetchStationsParams {
 
 export async function fetchStationsByBounds(
   params: FetchStationsParams,
+  signal?: AbortSignal,
 ): Promise<ChargingStation[]> {
   const { north, west, south, east } = params.bounds
   const query: Record<string, string | number> = {
@@ -27,6 +28,6 @@ export async function fetchStationsByBounds(
     verbose: 'false',
   }
 
-  const response = await client.get<ChargingStation[]>('/poi', { params: query })
+  const response = await client.get<ChargingStation[]>('/poi', { params: query, signal })
   return response.data
 }
