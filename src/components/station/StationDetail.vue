@@ -115,13 +115,13 @@ function openDirections() {
             <!-- Handle / close bar -->
             <div class="detail-handle">
                 <div class="handle-bar" />
-                <button class="close-btn" @click="emit('close')" aria-label="Close detail">
+                <!-- <button class="close-btn" @click="emit('close')" aria-label="Close detail">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                         stroke-width="2.5">
                         <line x1="18" y1="6" x2="6" y2="18" />
                         <line x1="6" y1="6" x2="18" y2="18" />
                     </svg>
-                </button>
+                </button> -->
             </div>
 
             <div class="detail-scroll">
@@ -285,11 +285,11 @@ function openDirections() {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 50;
+    z-index: 1000;
     background: var(--bg-card);
     border-top: 1px solid var(--border);
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-    max-height: 70dvh;
+    max-height: 50vh;
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-lg);
@@ -339,7 +339,7 @@ function openDirections() {
     }
 }
 
-.close-btn {
+/* .close-btn {
     background: var(--bg-surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-full);
@@ -357,7 +357,7 @@ function openDirections() {
 .close-btn:hover {
     background: var(--bg-card-2);
     color: var(--text-primary);
-}
+} */
 
 .detail-scroll {
     flex: 1;

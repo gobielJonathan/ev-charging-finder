@@ -86,6 +86,7 @@ const isHome = computed(() => route.name === 'home')
 }
 
 .brand-tagline {
+    margin-top: 4px;
     display: block;
     font-size: 11px;
     color: var(--text-muted);
