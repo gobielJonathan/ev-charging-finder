@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { fetchNearbyStations } from '@/services/api'
+import { fetchStationsByBounds } from '@/services/api'
 import type { ChargingStation, MapBounds } from '@/types/station'
 
 export const useStationStore = defineStore('station', () => {
@@ -12,22 +12,21 @@ export const useStationStore = defineStore('station', () => {
   const userLng = ref(106.8224)
   const hasUserLocation = ref(false)
   const isDetailOpen = ref(false)
+  const lastFetchedBounds = ref<MapBounds | null>(null)
 
   const operationalStations = computed(() =>
     stations.value.filter((s) => s.StatusType?.IsOperational !== false),
   )
 
-  async function loadStation(lat: number, lng: number, bounds?: MapBounds) {
+  async function loadStations(bounds: MapBounds) {
     isLoading.value = true
     error.value = null
     try {
-      const incoming = await fetchNearbyStations({ latitude: lat, longitude: lng, bounds })
-      // Merge: keep existing stations + add new ones, deduplicate by ID
-      const existingById = new Map(stations.value.map((s) => [s.ID, s]))
-      for (const s of incoming) {
-        existingById.set(s.ID, s) // overwrite with fresher data if same ID
-      }
-      stations.value = Array.from(existingById.values())
+      const incoming = await fetchStationsByBounds({ bounds })
+      stations.value = incoming
+      // Record the bounds that were actually fetched so callers can
+      // avoid redundant requests when the viewport hasn't moved outside this area.
+      lastFetchedBounds.value = bounds
     } catch (e) {
       error.value = 'Failed to load charging stations. Please try again.'
       console.error(e)
@@ -38,6 +37,7 @@ export const useStationStore = defineStore('station', () => {
 
   function clearStations() {
     stations.value = []
+    lastFetchedBounds.value = null
   }
 
   function setUserLocation(lat: number, lng: number) {
@@ -67,8 +67,9 @@ export const useStationStore = defineStore('station', () => {
     userLng,
     hasUserLocation,
     isDetailOpen,
+    lastFetchedBounds,
     operationalStations,
-    loadStation,
+    loadStations,
     clearStations,
     setUserLocation,
     selectStation,

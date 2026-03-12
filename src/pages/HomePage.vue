@@ -31,7 +31,7 @@ const PERM_KEY = 'chargenow_location_perm'
 function applyUserLocation(latitude: number, longitude: number) {
     store.clearStations()
     store.setUserLocation(latitude, longitude)
-    store.loadStation(latitude, longitude)
+    // Stations will be fetched by map's moveend event when it flies to the new location
     nextTick(() => mapRef.value?.flyToUser())
 }
 
@@ -53,7 +53,6 @@ function locateSilently() {
             // Geolocation failed — fall back to Jakarta without changing permission
             store.clearStations()
             store.setUserLocation(-6.2244, 106.8224)
-            store.loadStation(-6.2244, 106.8224)
             nextTick(() => mapRef.value?.flyToUser())
         },
         { timeout: 10000, maximumAge: 60000 },
@@ -85,7 +84,6 @@ function handleAllowLocation() {
 function handleDenyLocation() {
     store.clearStations()
     store.setUserLocation(-6.2244, 106.8224)
-    store.loadStation(-6.2244, 106.8224)
     permState.value = 'denied'
     localStorage.setItem(PERM_KEY, 'denied') // explicit user choice — safe to persist
     scheduleDeniedBannerHide()
@@ -94,7 +92,6 @@ function handleDenyLocation() {
 function useFallbackLocation() {
     store.clearStations()
     store.setUserLocation(-6.2244, 106.8224)
-    store.loadStation(-6.2244, 106.8224)
     permState.value = 'denied'
     // NOTE: do NOT write to localStorage here — this is called on geolocation
     // failure too, and we must not overwrite a previously granted permission.
@@ -112,11 +109,11 @@ function scheduleDeniedBannerHide() {
 // ─── Map events ──────────────────────────────────────────────────────────────
 function onMapMoved(
     bounds: { north: number; south: number; east: number; west: number },
-    center: { lat: number; lng: number },
+    _center: { lat: number; lng: number },
 ) {
     if (moveDebounce) clearTimeout(moveDebounce)
     moveDebounce = setTimeout(() => {
-        store.loadStation(center.lat, center.lng, bounds)
+        store.loadStations(bounds)
     }, 600)
 }
 
@@ -142,19 +139,15 @@ function flyToUser() {
         (pos) => {
             const { latitude, longitude } = pos.coords
             store.setUserLocation(latitude, longitude)
-            mapRef.value?.flyToUser()
-            // Reload stations centered on updated position
             store.clearStations()
-            store.loadStation(latitude, longitude)
+            mapRef.value?.flyToUser()
+            // Stations will be fetched by map's moveend event
             isLocating.value = false
         },
         () => {
             // Use cached user location from store
+            store.clearStations()
             mapRef.value?.flyToUser()
-            if (store.hasUserLocation) {
-                store.clearStations()
-                store.loadStation(store.userLat!, store.userLng!)
-            }
             isLocating.value = false
         },
         { timeout: 6000, maximumAge: 30000 },
@@ -195,7 +188,7 @@ onMounted(() => {
         // User previously chose Jakarta — load it silently, no modal, no banner
         store.clearStations()
         store.setUserLocation(-6.2244, 106.8224)
-        store.loadStation(-6.2244, 106.8224)
+        // Stations will be fetched by map's moveend event on init
         permState.value = 'granted' // 'granted' hides both modal and banner
     }
     // Otherwise permState stays 'idle' and the modal is shown

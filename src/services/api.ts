@@ -12,27 +12,19 @@ const client = axios.create({
 })
 
 export interface FetchStationsParams {
-  latitude: number
-  longitude: number
-  distance?: number
-  bounds?: MapBounds
+  bounds: MapBounds
 }
 
-export async function fetchNearbyStations(params: FetchStationsParams): Promise<ChargingStation[]> {
+export async function fetchStationsByBounds(
+  params: FetchStationsParams,
+): Promise<ChargingStation[]> {
+  const { north, west, south, east } = params.bounds
   const query: Record<string, string | number> = {
     countrycode: 'id',
-    distance: params.distance ?? 10,
-    distanceunit: 'km',
-    latitude: params.latitude,
-    longitude: params.longitude,
+    boundingbox: `(${north},${west}),(${south},${east})`,
     maxresults: 50,
     compact: 'false',
     verbose: 'false',
-  }
-
-  if (params.bounds) {
-    const { north, west, south, east } = params.bounds
-    query.boundingbox = `(${north},${west}),(${south},${east})`
   }
 
   const response = await client.get<ChargingStation[]>('/poi', { params: query })

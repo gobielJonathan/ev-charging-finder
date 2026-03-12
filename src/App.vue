@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRegisterSW } from 'virtual:pwa-register/vue'
+// import { useRegisterSW } from 'virtual:pwa-register/vue'
 import { useRoute } from 'vue-router'
 import BottomNav from '@/components/layout/BottomNav.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
@@ -8,11 +8,11 @@ import AppHeader from '@/components/layout/AppHeader.vue'
 const route = useRoute()
 
 // PWA update prompt
-const { needRefresh, updateServiceWorker } = useRegisterSW()
+// const { needRefresh, updateServiceWorker } = useRegisterSW()
 const dismissedUpdate = ref(false)
 
 function applyUpdate() {
-  updateServiceWorker(true)
+  // updateServiceWorker(true)
 }
 </script>
 
@@ -29,7 +29,7 @@ function applyUpdate() {
     <BottomNav />
 
     <!-- PWA update banner -->
-    <Transition name="pwa-banner">
+    <!-- <Transition name="pwa-banner">
       <div v-if="needRefresh && !dismissedUpdate" class="pwa-update-banner">
         <span class="pwa-update-text">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
@@ -45,7 +45,7 @@ function applyUpdate() {
           <button class="pwa-btn pwa-btn--dismiss" @click="dismissedUpdate = true">Later</button>
         </div>
       </div>
-    </Transition>
+    </Transition> -->
   </div>
 </template>
 
