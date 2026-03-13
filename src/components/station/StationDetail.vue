@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ChargingStation } from '@/types/station'
-import { computed, ref, onMounted, onBeforeUnmount } from 'vue'
+import { BottomSheet } from '@nosadev/vue-bottom-sheet'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 
 const props = defineProps<{
@@ -13,52 +14,26 @@ const emit = defineEmits<{
 }>()
 
 const router = useRouter()
+const sheetVisible = ref(false)
 
-// ─── Swipe-to-close gesture ──────────────────────────────────────────────────
-const panelRef = ref<HTMLElement | null>(null)
-const dragOffset = ref(0)
-const isDragging = ref(false)
-let startY = 0
-let startX = 0
-let dragging = false
+watch(
+    () => props.show,
+    (visible) => {
+        if (!visible) {
+            sheetVisible.value = false
+            return
+        }
 
-function onTouchStart(e: TouchEvent) {
-    const touch = e.touches[0]
-    if (!touch) return
+        sheetVisible.value = false
+        nextTick(() => {
+            sheetVisible.value = true
+        })
+    },
+    { immediate: true },
+)
 
-    startY = touch.clientY
-    startX = touch.clientX
-    dragging = false
-    dragOffset.value = 0
-}
-
-function onTouchMove(e: TouchEvent) {
-    const touch = e.touches[0]
-    if (!touch) return
-
-    const dy = touch.clientY - startY
-    const dx = Math.abs(touch.clientX - startX)
-
-    // Only start dragging if vertical movement > horizontal
-    if (!dragging && dy > 8 && dy > dx) {
-        dragging = true
-        isDragging.value = true
-    }
-
-    if (dragging && dy > 0) {
-        dragOffset.value = dy
-        e.preventDefault()
-    }
-}
-
-function onTouchEnd() {
-    if (dragging && dragOffset.value > 100) {
-        // Swipe threshold reached — close
-        emit('close')
-    }
-    dragOffset.value = 0
-    dragging = false
-    isDragging.value = false
+function closeSheet() {
+    emit('close')
 }
 
 const isOperational = computed(() => props.station.StatusType?.IsOperational !== false)
@@ -103,27 +78,15 @@ function openDirections() {
 </script>
 
 <template>
-    <!-- Backdrop -->
-    <Transition name="backdrop">
-        <div v-if="show" class="detail-backdrop" @click="emit('close')" />
-    </Transition>
-
-    <Transition name="slide-panel">
-        <div v-if="show" ref="panelRef" class="station-detail" :class="{ 'station-detail--dragging': isDragging }"
-            :style="dragOffset > 0 ? { transform: `translateY(${dragOffset}px)`, transition: 'none' } : undefined"
-            @touchstart.passive="onTouchStart" @touchmove="onTouchMove" @touchend="onTouchEnd">
-            <!-- Handle / close bar -->
+    <BottomSheet :show-sheet="sheetVisible" :on-close="closeSheet" :use-drag-effect="false" :header-padding="0"
+        :background="'var(--bg-card)'" :overlay-background="'rgba(0, 0, 0, 0.45)'" id="station-detail-sheet">
+        <template #header>
             <div class="detail-handle">
                 <div class="handle-bar" />
-                <!-- <button class="close-btn" @click="emit('close')" aria-label="Close detail">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                </button> -->
             </div>
+        </template>
 
+        <div class="station-detail">
             <div class="detail-scroll">
                 <!-- Header -->
                 <div class="detail-header detail-anim" style="--anim-order: 0">
@@ -255,65 +218,22 @@ function openDirections() {
                 </div>
             </div>
         </div>
-    </Transition>
+    </BottomSheet>
 </template>
 
 <style scoped>
-/* ─── Backdrop ─── */
-.detail-backdrop {
-    position: absolute;
-    inset: 0;
-    z-index: 49;
-    background: rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-}
-
-.backdrop-enter-active,
-.backdrop-leave-active {
-    transition: opacity 0.3s ease;
-}
-
-.backdrop-enter-from,
-.backdrop-leave-to {
-    opacity: 0;
-}
-
 /* ─── Panel ─── */
 .station-detail {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
     background: var(--bg-card);
-    border-top: 1px solid var(--border);
-    border-radius: var(--radius-xl) var(--radius-xl) 0 0;
     max-height: 50vh;
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow-lg);
-    will-change: transform;
-}
-
-.station-detail--dragging {
-    /* Disable scroll while dragging */
-    overflow: hidden;
 }
 
 /* Desktop: side panel */
 @media (min-width: 768px) {
     .station-detail {
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: auto;
-        width: 380px;
-        border-radius: var(--radius-xl) 0 0 var(--radius-xl);
-        border-top: none;
-        border-right: 1px solid var(--border);
-        max-height: 100%;
+        max-height: 70vh;
     }
 }
 
@@ -362,6 +282,8 @@ function openDirections() {
 .detail-scroll {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
     padding: 12px 16px 24px;
     display: flex;
     flex-direction: column;
@@ -611,35 +533,6 @@ function openDirections() {
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-/* ─── Panel slide transition ─── */
-.slide-panel-enter-active {
-    transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
-}
-
-.slide-panel-leave-active {
-    transition: transform 0.25s cubic-bezier(0.4, 0, 1, 1), opacity 0.2s ease;
-}
-
-.slide-panel-enter-from {
-    transform: translateY(100%);
-    opacity: 0;
-}
-
-.slide-panel-leave-to {
-    transform: translateY(100%);
-    opacity: 0;
-}
-
-@media (min-width: 768px) {
-    .slide-panel-enter-from {
-        transform: translateX(-100%);
-    }
-
-    .slide-panel-leave-to {
-        transform: translateX(-100%);
     }
 }
 </style>

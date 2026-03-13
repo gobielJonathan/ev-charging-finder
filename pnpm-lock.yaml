@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@nosadev/vue-bottom-sheet':
+        specifier: ^1.0.12
+        version: 1.0.12(typescript@5.9.3)
       '@pinia/nuxt':
         specifier: ^0.11.3
         version: 0.11.3(pinia@3.0.4(typescript@5.9.3)(vue@3.5.30(typescript@5.9.3)))
@@ -792,6 +795,9 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@nosadev/vue-bottom-sheet@1.0.12':
+    resolution: {integrity: sha512-23oqCCtQ+y/MWiXVQSFVkaMpg209+EjacvjdSMR8gjuHAB234EsLGmnaaWOVdV140zuqVlGbTR8dhj5aiA8Pcg==}
 
   '@nuxt/kit@4.3.1':
     resolution: {integrity: sha512-UjBFt72dnpc+83BV3OIbCT0YHLevJtgJCHpxMX0YRKWLDhhbcDdUse87GtsQBrjvOzK7WUNUYLDS/hQLYev5rA==}
@@ -3342,6 +3348,12 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@nosadev/vue-bottom-sheet@1.0.12(typescript@5.9.3)':
+    dependencies:
+      vue: 3.5.30(typescript@5.9.3)
+    transitivePeerDependencies:
+      - typescript
 
   '@nuxt/kit@4.3.1':
     dependencies:

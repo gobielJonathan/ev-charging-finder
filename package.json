@@ -12,6 +12,7 @@
     "format": "prettier --write --experimental-cli src/"
   },
   "dependencies": {
+    "@nosadev/vue-bottom-sheet": "^1.0.12",
     "@pinia/nuxt": "^0.11.3",
     "@vercel/speed-insights": "^2.0.0",
     "axios": "^1.13.6",
