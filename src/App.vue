@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 // import BottomNav from '@/components/layout/BottomNav.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import { SpeedInsights } from '@vercel/speed-insights/vue';
+import { Analytics } from '@vercel/analytics/vue';
 
 const route = useRoute()
 
@@ -20,6 +21,7 @@ function applyUpdate() {
 <template>
   <div class="app-shell">
     <SpeedInsights />
+    <Analytics />
     <AppHeader />
     <main class="app-main">
       <RouterView v-slot="{ Component }">
