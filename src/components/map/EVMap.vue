@@ -105,7 +105,7 @@ function renderMarkers(stations: ChargingStation[]) {
     if (!markersLayer) return
     markersLayer.clearLayers()
 
-    stations.forEach((station) => {
+    stations?.forEach((station) => {
         const { Latitude, Longitude } = station.AddressInfo
         if (Latitude == null || Longitude == null) return
 

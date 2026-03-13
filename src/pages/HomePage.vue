@@ -264,10 +264,9 @@ onMounted(() => {
             @close="store.closeDetail()" />
 
         <!-- Bottom drawer: station list (hidden when detail panel is open) -->
-        <div class="list-drawer"
-            :class="{ 'list-drawer--expanded': isListExpanded, 'list-drawer--hidden': store.isDetailOpen }">
+        <div class="list-drawer">
             <!-- Drag handle / header -->
-            <button class="drawer-header" @click="isListExpanded = !isListExpanded">
+            <button class="drawer-header">
                 <div class="drawer-handle" />
                 <div class="drawer-title-row">
                     <span class="drawer-title">
@@ -276,10 +275,6 @@ onMounted(() => {
                         </svg>
                         Nearby Stations
                     </span>
-                    <svg class="drawer-chevron" :class="{ 'drawer-chevron--up': isListExpanded }" width="16" height="16"
-                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                        <path d="M18 15l-6-6-6 6" />
-                    </svg>
                 </div>
             </button>
 
@@ -317,7 +312,6 @@ onMounted(() => {
 /* ---- Map Container ---- */
 .map-container {
     position: relative;
-    flex: 1;
     min-height: 0;
     overflow: hidden;
 }
@@ -467,21 +461,9 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     background: var(--bg-card);
-    border-top: 1px solid var(--border);
-    max-height: 38%;
-    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 40dvh;
+    height: 100%;
     overflow: hidden;
-    flex-shrink: 0;
-}
-
-.list-drawer--expanded {
-    max-height: 60%;
-}
-
-.list-drawer--hidden {
-    max-height: 0;
-    border-top-color: transparent;
-    pointer-events: none;
 }
 
 .drawer-header {
@@ -509,6 +491,7 @@ onMounted(() => {
     align-items: center;
     justify-content: space-between;
     width: 100%;
+    margin-bottom: 8px;
 }
 
 .drawer-title {
@@ -582,10 +565,6 @@ onMounted(() => {
         height: calc(100dvh - var(--header-height));
     }
 
-    .map-container {
-        flex: 1;
-    }
-
     .list-drawer {
         display: none;
     }
@@ -626,6 +605,7 @@ onMounted(() => {
 
     /* Adjust map to accommodate sidebar */
     .map-container {
+        flex: 1;
         margin-left: var(--sidebar-width);
     }
 }
