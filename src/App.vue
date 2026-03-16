@@ -30,6 +30,8 @@ const route = useRoute()
   flex-direction: column;
   min-height: 100dvh;
   background: var(--bg);
+  /* Extend content above the Android gesture bar / iOS home indicator */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .app-main {

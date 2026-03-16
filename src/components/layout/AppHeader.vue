@@ -43,7 +43,10 @@ const isHome = computed(() => route.name === 'home')
     left: 0;
     right: 0;
     z-index: 100;
+    /* var(--header-height) already = 60px + env(safe-area-inset-top) */
     height: var(--header-height);
+    /* Push brand content below the iOS/Android status bar */
+    padding-top: env(safe-area-inset-top, 0px);
     border-bottom: 1px solid var(--border);
 }
 

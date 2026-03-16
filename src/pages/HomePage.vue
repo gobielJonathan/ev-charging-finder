@@ -6,6 +6,11 @@ import StationDetail from '@/components/station/StationDetail.vue'
 import LocationPermissionModal from '@/components/map/LocationPermissionModal.vue'
 import { useStationStore } from '@/stores/stationStore'
 import type { ChargingStation } from '@/types/station'
+import {
+    getCurrentPosition,
+    requestLocationPermission,
+    checkLocationPermission,
+} from '@/services/geolocation'
 
 // ─── Store & refs ───────────────────────────────────────────────────────────
 const store = useStationStore()
@@ -37,48 +42,41 @@ function applyUserLocation(latitude: number, longitude: number) {
 
 // Silent locate: runs geolocation without showing the modal at all.
 // Used when the user has already granted permission on a previous visit.
-function locateSilently() {
-    if (!navigator.geolocation) {
-        useFallbackLocation()
-        return
-    }
+async function locateSilently() {
     // Keep permState at 'granted' the whole time — modal never appears
     permState.value = 'granted'
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            applyUserLocation(pos.coords.latitude, pos.coords.longitude)
-            localStorage.setItem(PERM_KEY, 'granted')
-        },
-        () => {
-            // Geolocation failed — fall back to Jakarta without changing permission
-            store.clearStations()
-            store.setUserLocation(-6.2244, 106.8224)
-            nextTick(() => mapRef.value?.flyToUser())
-        },
-        { timeout: 10000, maximumAge: 60000 },
-    )
+    try {
+        const pos = await getCurrentPosition({ timeout: 10000, maximumAge: 60000 })
+        applyUserLocation(pos.latitude, pos.longitude)
+        localStorage.setItem(PERM_KEY, 'granted')
+    } catch {
+        // Geolocation failed — fall back to Jakarta without changing permission
+        store.clearStations()
+        store.setUserLocation(-6.2244, 106.8224)
+        nextTick(() => mapRef.value?.flyToUser())
+    }
 }
 
 // Modal flow: shows requesting spinner, called when user taps "Allow" in the modal.
-function handleAllowLocation() {
-    if (!navigator.geolocation) {
-        useFallbackLocation()
-        return
-    }
+async function handleAllowLocation() {
     permState.value = 'requesting'
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            applyUserLocation(pos.coords.latitude, pos.coords.longitude)
-            permState.value = 'granted'
-            localStorage.setItem(PERM_KEY, 'granted')
-        },
-        () => {
-            // Browser denied or timed out
+    try {
+        // On native: request system permission first, then get position
+        const granted = await requestLocationPermission()
+        if (!granted) {
             useFallbackLocation()
             scheduleDeniedBannerHide()
-        },
-        { timeout: 10000, maximumAge: 30000 },
-    )
+            return
+        }
+        const pos = await getCurrentPosition({ timeout: 10000, maximumAge: 30000 })
+        applyUserLocation(pos.latitude, pos.longitude)
+        permState.value = 'granted'
+        localStorage.setItem(PERM_KEY, 'granted')
+    } catch {
+        // Denied or timed out
+        useFallbackLocation()
+        scheduleDeniedBannerHide()
+    }
 }
 
 function handleDenyLocation() {
@@ -124,34 +122,29 @@ function onStationClick(station: ChargingStation) {
 
 // ─── Locate button ────────────────────────────────────────────────────────────
 // If permission was already granted, re-locate and reload nearby stations fresh
-function flyToUser() {
+async function flyToUser() {
     if (permState.value === 'idle') {
         // Show the modal instead of silently asking
         return
     }
-    if (!navigator.geolocation || permState.value === 'denied') {
+    if (permState.value === 'denied') {
         // Already denied — just fly to the fallback position (Jakarta)
         mapRef.value?.flyToUser()
         return
     }
     isLocating.value = true
-    navigator.geolocation.getCurrentPosition(
-        (pos) => {
-            const { latitude, longitude } = pos.coords
-            store.setUserLocation(latitude, longitude)
-            store.clearStations()
-            mapRef.value?.flyToUser()
-            // Stations will be fetched by map's moveend event
-            isLocating.value = false
-        },
-        () => {
-            // Use cached user location from store
-            store.clearStations()
-            mapRef.value?.flyToUser()
-            isLocating.value = false
-        },
-        { timeout: 6000, maximumAge: 30000 },
-    )
+    try {
+        const pos = await getCurrentPosition({ timeout: 6000, maximumAge: 30000 })
+        store.setUserLocation(pos.latitude, pos.longitude)
+        store.clearStations()
+        mapRef.value?.flyToUser()
+    } catch {
+        // Use cached user location from store
+        store.clearStations()
+        mapRef.value?.flyToUser()
+    } finally {
+        isLocating.value = false
+    }
 }
 
 // ─── Error toast ─────────────────────────────────────────────────────────────
@@ -179,7 +172,7 @@ watch(mapRef, (mapInstance) => {
     }
 }, { once: true })
 
-onMounted(() => {
+onMounted(async () => {
     const saved = localStorage.getItem(PERM_KEY)
     if (saved === 'granted') {
         // User already allowed location — skip modal entirely, locate silently
@@ -190,8 +183,16 @@ onMounted(() => {
         store.setUserLocation(-6.2244, 106.8224)
         // Stations will be fetched by map's moveend event on init
         permState.value = 'granted' // 'granted' hides both modal and banner
+    } else {
+        // On native, check if system permission was already granted from a
+        // previous app session (e.g. user re-opens app without clearing data)
+        const nativePerm = await checkLocationPermission()
+        if (nativePerm === 'granted') {
+            localStorage.setItem(PERM_KEY, 'granted')
+            locateSilently()
+        }
+        // Otherwise permState stays 'idle' and the modal is shown
     }
-    // Otherwise permState stays 'idle' and the modal is shown
 })
 </script>
 
@@ -312,6 +313,7 @@ onMounted(() => {
 /* ---- Map Container ---- */
 .map-container {
     position: relative;
+    flex: 1;
     min-height: 0;
     overflow: hidden;
 }
@@ -461,8 +463,8 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     background: var(--bg-card);
-    max-height: 40dvh;
-    height: 100%;
+    flex-shrink: 0;
+    height: 40dvh;
     overflow: hidden;
 }
 

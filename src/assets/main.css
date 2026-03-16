@@ -32,9 +32,11 @@
   --shadow-lg: 0 16px 48px rgba(0, 0, 0, 0.5);
   --shadow-glow: 0 0 20px rgba(0, 200, 150, 0.25);
 
-  --nav-height: 64px;
+  /* Heights bake in safe-area insets so every existing calc(var(--header-height))
+     and calc(var(--nav-height)) consumer is automatically correct on native. */
+  --header-height: calc(60px + env(safe-area-inset-top, 0px));
+  --nav-height: calc(64px + env(safe-area-inset-bottom, 0px));
   --sidebar-width: 380px;
-  --header-height: 60px;
 
   --transition-fast: 0.15s ease;
   --transition-base: 0.25s ease;
