@@ -177,7 +177,12 @@ function flyToUser() {
     map.flyTo([store.userLat, store.userLng], 14, { duration: 1.2 })
 }
 
-defineExpose({ flyToUser })
+function flyToLocation(lat: number, lng: number, zoom = 14) {
+    if (!map) return
+    map.flyTo([lat, lng], zoom, { duration: 1.2 })
+}
+
+defineExpose({ flyToUser, flyToLocation })
 
 watch(
     () => store.stations,

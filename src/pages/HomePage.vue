@@ -4,6 +4,7 @@ import EVMap from '@/components/map/EVMap.vue'
 import StationList from '@/components/station/StationList.vue'
 import StationDetail from '@/components/station/StationDetail.vue'
 import LocationPermissionModal from '@/components/map/LocationPermissionModal.vue'
+import MapSearch from '@/components/map/MapSearch.vue'
 import { useStationStore } from '@/stores/stationStore'
 import type { ChargingStation } from '@/types/station'
 import {
@@ -120,6 +121,11 @@ function onStationClick(station: ChargingStation) {
     isListExpanded.value = false
 }
 
+// ─── Search place ────────────────────────────────────────────────────────────
+function onLocationSelect(lat: number, lng: number) {
+    mapRef.value?.flyToLocation(lat, lng, 14)
+}
+
 // ─── Locate button ────────────────────────────────────────────────────────────
 // If permission was already granted, re-locate and reload nearby stations fresh
 async function flyToUser() {
@@ -225,39 +231,10 @@ onMounted(async () => {
         <div class="map-container">
             <EVMap ref="mapRef" @station-click="onStationClick" @map-moved="onMapMoved" @locate-click="flyToUser" />
 
-            <!-- Map controls overlay -->
-            <div class="map-controls">
-                <!-- Locate me -->
-                <button class="map-ctrl-btn map-ctrl-btn--locate" :class="{ 'ctrl-loading': isLocating }"
-                    @click="flyToUser" aria-label="Go to my location">
-                    <svg v-if="!isLocating" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="2.5">
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M12 2v3m0 14v3M2 12h3m14 0h3" />
-                    </svg>
-                    <svg v-else class="spin" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" stroke-width="2.5">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                    <span>{{ isLocating ? 'Locating…' : 'My Location' }}</span>
-                </button>
-
-                <!-- Station count badge -->
-                <div class="count-badge" v-if="!store.isLoading">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
-                    </svg>
-                    {{ store.stations.length }} stations
-                </div>
-                <div class="count-badge loading-badge" v-else>
-                    <svg class="spin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                        stroke-width="3">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
-                    Loading...
-                </div>
+            <!-- Search overlay -->
+            <div class="map-search-overlay">
+                <MapSearch @location-select="onLocationSelect" />
             </div>
-
         </div>
 
         <!-- Station detail panel (overlays full page) -->
@@ -315,19 +292,24 @@ onMounted(async () => {
     position: relative;
     flex: 1;
     min-height: 0;
-    overflow: hidden;
+    /* overflow:clip keeps layout clipping without creating a stacking context,
+       so absolutely-positioned children (search dropdown) are not clipped. */
+    overflow: clip;
 }
 
-/* ---- Map controls ---- */
-.map-controls {
+/* ---- Search overlay ---- */
+.map-search-overlay {
     position: absolute;
     top: 12px;
-    right: 12px;
-    z-index: 20;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
+    left: 12px;
+    right: 60px;
+    /* Must be above Leaflet's highest pane (popup pane = 700, controls = 800) */
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.map-search-overlay>* {
+    pointer-events: all;
 }
 
 .map-ctrl-btn {
