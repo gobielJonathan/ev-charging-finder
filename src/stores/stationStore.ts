@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import axios from 'axios'
-import { fetchStationsByBounds } from '@/services/api'
-import type { ChargingStation, MapBounds } from '@/types/station'
+import { fetchStationsByBounds, submitStation } from '@/services/api'
+import type { ChargingStation, MapBounds, NewStationPayload } from '@/types/station'
 
 export const useStationStore = defineStore('station', () => {
   const stations = ref<ChargingStation[]>([])
@@ -79,6 +79,35 @@ export const useStationStore = defineStore('station', () => {
     }, 300)
   }
 
+  // ─── Add Station ──────────────────────────────────────────────────────────
+
+  const isSubmitting = ref(false)
+  const submitError = ref<string | null>(null)
+  const submitSuccess = ref(false)
+
+  async function addStation(payload: NewStationPayload): Promise<boolean> {
+    isSubmitting.value = true
+    submitError.value = null
+    submitSuccess.value = false
+    try {
+      await submitStation(payload)
+      submitSuccess.value = true
+      return true
+    } catch (e) {
+      submitError.value = 'Failed to submit station. Please check your data and try again.'
+      console.error(e)
+      return false
+    } finally {
+      isSubmitting.value = false
+    }
+  }
+
+  function resetSubmitState() {
+    isSubmitting.value = false
+    submitError.value = null
+    submitSuccess.value = false
+  }
+
   return {
     stations,
     selectedStation,
@@ -95,5 +124,10 @@ export const useStationStore = defineStore('station', () => {
     setUserLocation,
     selectStation,
     closeDetail,
+    isSubmitting,
+    submitError,
+    submitSuccess,
+    addStation,
+    resetSubmitState,
   }
 })

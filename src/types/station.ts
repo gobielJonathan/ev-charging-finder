@@ -135,3 +135,74 @@ export interface MapBounds {
   east: number
   west: number
 }
+
+// ─── Add-Station Submission Types ────────────────────────────────────────────
+
+export interface NewStationConnection {
+  ConnectionTypeID: number
+  LevelID: number | null
+  PowerKW: number | null
+  Quantity: number | null
+  StatusTypeID: number | null
+  CurrentTypeID: number | null
+  Amps: number | null
+  Voltage: number | null
+  Comments: string | null
+}
+
+export interface NewStationPayload {
+  AddressInfo: {
+    Title: string
+    AddressLine1: string
+    AddressLine2: string | null
+    Town: string
+    StateOrProvince: string | null
+    Postcode: string | null
+    CountryID: number
+    Latitude: number
+    Longitude: number
+    ContactTelephone1: string | null
+    ContactEmail: string | null
+    AccessComments: string | null
+    RelatedURL: string | null
+  }
+  Connections: NewStationConnection[]
+  OperatorID: number | null
+  UsageTypeID: number | null
+  StatusTypeID: number
+  NumberOfPoints: number | null
+  GeneralComments: string | null
+}
+
+// Reference data used in the "Add Station" form
+export const CONNECTION_TYPES: { id: number; label: string }[] = [
+  { id: 1, label: 'Type 1 (J1772)' },
+  { id: 25, label: 'Type 2 (Mennekes)' },
+  { id: 2, label: 'CHAdeMO' },
+  { id: 32, label: 'CCS (Type 1 / Combo)' },
+  { id: 33, label: 'CCS (Type 2 / Combo)' },
+  { id: 57, label: 'GB/T AC' },
+  { id: 26, label: 'GB/T DC' },
+  { id: 0, label: 'Unknown' },
+]
+
+export const CHARGING_LEVELS: { id: number; label: string }[] = [
+  { id: 1, label: 'Level 1 (AC ≤ 3.7 kW)' },
+  { id: 2, label: 'Level 2 (AC 3.7 – 22 kW)' },
+  { id: 3, label: 'Level 3 / DC Fast Charge' },
+]
+
+export const USAGE_TYPES: { id: number; label: string }[] = [
+  { id: 1, label: 'Public' },
+  { id: 4, label: 'Public – Membership Required' },
+  { id: 5, label: 'Public – Pay At Location' },
+  { id: 2, label: 'Private – Restricted Access' },
+  { id: 7, label: 'Private – For Staff / Residents' },
+]
+
+export const STATUS_TYPES: { id: number; label: string }[] = [
+  { id: 50, label: 'Operational' },
+  { id: 75, label: 'Temporarily Unavailable' },
+  { id: 100, label: 'Not Operational' },
+  { id: 200, label: 'Planned for Future Date' },
+]
