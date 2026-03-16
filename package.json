@@ -9,9 +9,17 @@
     "preview": "vite preview",
     "build-only": "vite build",
     "type-check": "vue-tsc --build",
-    "format": "prettier --write --experimental-cli src/"
+    "format": "prettier --write --experimental-cli src/",
+    "cap:sync": "pnpm run build-only && npx cap sync",
+    "cap:android": "pnpm run build-only && npx cap sync android && npx cap open android",
+    "cap:ios": "pnpm run build-only && npx cap sync ios && npx cap open ios",
+    "cap:run:android": "pnpm run build-only && npx cap sync android && npx cap run android",
+    "cap:run:ios": "pnpm run build-only && npx cap sync ios && npx cap run ios"
   },
   "dependencies": {
+    "@capacitor/android": "^7.6.0",
+    "@capacitor/core": "^7.6.0",
+    "@capacitor/ios": "^7.6.0",
     "@nosadev/vue-bottom-sheet": "^1.0.12",
     "@pinia/nuxt": "^0.11.3",
     "@vercel/analytics": "^2.0.1",
@@ -24,6 +32,7 @@
     "vue-router": "^5.0.3"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.0",
     "@tsconfig/node24": "^24.0.4",
     "@types/leaflet": "^1.9.21",
     "@types/node": "^24.11.0",
